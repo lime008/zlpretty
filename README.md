@@ -1,6 +1,6 @@
 # zlpretty
 
-### Forked from github.com/UnnoTed/horizontal
+### Forked from [github.com/UnnoTed/horizontal](https://github.com/UnnoTed/horizontal)
 
 zlpretty is a pretty logging with focus on readability, based on the `zerolog.ConsoleWriter` but with some added features like json pretty printing and log line separator.
 
