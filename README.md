@@ -1,10 +1,12 @@
-# Horizontal
+# zlpretty
 
-Horizontal is a pretty logging with focus on readability, based on the `zerolog.ConsoleWriter` but with some added features like json pretty printing and log line separator.
+### Forked from github.com/UnnoTed/horizontal
 
-![horizontal](https://i.imgur.com/RvuuYSj.png)
+zlpretty is a pretty logging with focus on readability, based on the `zerolog.ConsoleWriter` but with some added features like json pretty printing and log line separator.
 
-`go get -u github.com/UnnoTed/horizontal`
+![zlpretty](https://i.imgur.com/RvuuYSj.png)
+
+`go get -u github.com/lime008/zlpretty`
 
 ```go
 package main
@@ -12,7 +14,7 @@ package main
 import (
 	"os"
 
-	"github.com/UnnoTed/horizontal"
+	"github.com/lime008/zlpretty"
 	"github.com/rs/zerolog/log"
 )
 
