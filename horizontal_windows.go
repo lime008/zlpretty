@@ -1,4 +1,4 @@
-package horizontal
+package zlpretty
 
 func onResize() {
 

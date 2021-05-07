@@ -1,4 +1,4 @@
-package horizontal
+package zlpretty
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/nwidger/jsoncolor"
 	"github.com/olekukonko/ts"
 	"github.com/rs/zerolog"
@@ -46,6 +47,7 @@ func resizeSeparator() {
 
 func init() {
 	f.Indent = "  "
+	f.Prefix = " "
 	// json colors
 	f.SpaceColor = color.New(color.FgRed, color.Bold)
 	f.CommaColor = color.New(color.FgWhite, color.Bold)
@@ -91,7 +93,7 @@ type ConsoleWriter struct {
 func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 	var event map[string]interface{}
 	// p = decodeIfBinaryToBytes(p)
-	d := json.NewDecoder(bytes.NewReader(p))
+	d := jsoniter.NewDecoder(bytes.NewReader(p))
 	d.UseNumber()
 	err = d.Decode(&event)
 	if err != nil {
@@ -108,7 +110,7 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 		}
 		level = strings.ToUpper(l)[0:4]
 	}
-	fmt.Fprintf(buf, "%s |%s| %s",
+	fmt.Fprintf(buf, "%s [%s] %s",
 		colorize(formatTime(event[zerolog.TimestampFieldName]), cDarkGray, !w.NoColor),
 		colorize(level, lvlColor, !w.NoColor),
 		colorize(event[zerolog.MessageFieldName], cReset, !w.NoColor))
@@ -119,22 +121,18 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 			continue
 		}
 		fields = append(fields, field)
-		buf.WriteByte('\n')
 	}
+	buf.WriteByte('\n')
 	sort.Strings(fields)
 	for _, field := range fields {
 		fmt.Fprintf(buf, " %s=", colorize(field, cCyan, !w.NoColor))
 		switch value := event[field].(type) {
 		case string:
-			if needsQuote(value) {
-				buf.WriteString(strconv.Quote(value))
-			} else {
-				buf.WriteString(value)
-			}
+			buf.WriteString(strconv.Quote(value))
 		case json.Number:
 			fmt.Fprint(buf, value)
 		default:
-			v, err := json.Marshal(value)
+			v, err := jsoniter.Marshal(value)
 			if err != nil {
 				return 0, err
 			}
@@ -183,13 +181,4 @@ func levelColor(level string) int {
 	default:
 		return cReset
 	}
-}
-
-func needsQuote(s string) bool {
-	for i := range s {
-		if s[i] < 0x20 || s[i] > 0x7e || s[i] == ' ' || s[i] == '\\' || s[i] == '"' {
-			return true
-		}
-	}
-	return false
 }
