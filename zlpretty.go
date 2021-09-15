@@ -26,21 +26,6 @@ func initFormatter() *colorjson.Formatter {
 	f.Indent = indent
 	f.NumberColor = color.New(color.FgHiMagenta)
 	f.KeyColor = color.New(color.FgCyan)
-	// f.Indent = "    "
-	// f.Prefix = "    "
-	// // json colors
-	// f.SpaceColor = color.New(color.FgRed, color.Bold)
-	// f.CommaColor = color.New(color.FgWhite, color.Bold)
-	// f.ColonColor = color.New(color.FgYellow, color.Bold)
-	// f.ObjectColor = color.New(color.FgGreen, color.Bold)
-	// f.ArrayColor = color.New(color.FgHiRed)
-	// f.FieldColor = color.New(color.FgCyan)
-	// f.StringColor = color.New(color.FgHiYellow)
-	// f.TrueColor = color.New(color.FgCyan, color.Bold)
-	// f.FalseColor = color.New(color.FgHiRed)
-	// f.NumberColor = color.New(color.FgHiMagenta)
-	// f.NullColor = color.New(color.FgWhite, color.Bold)
-	// f.StringQuoteColor = color.New(color.FgBlue, color.Bold)
 	return f
 }
 
@@ -60,11 +45,11 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 	level := "????"
 	lvlColor := color.Reset
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {
-		level = strings.ToUpper(l)[0:4]
+		level = strings.ToUpper(l)
 		lvlColor = levelColor(l)
 	}
 	color.New(color.FgHiBlack).Fprint(w.Out, formatTime(event[zerolog.TimestampFieldName]))
-	color.New(lvlColor).Fprintf(w.Out, " [%s] ", level)
+	color.New(lvlColor, color.Bold).Fprintf(w.Out, " [%s] ", level)
 	if message, ok := event[zerolog.MessageFieldName].(string); ok {
 		w.Out.Write([]byte(message))
 	}
@@ -77,9 +62,9 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 		color.New(color.FgCyan).Fprint(w.Out, "\n", strings.Repeat(" ", indent), field, "=")
 		switch value := event[field].(type) {
 		case string:
-			w.Out.Write([]byte(strconv.Quote(value)))
+			color.New(color.FgGreen).Fprint(w.Out, strconv.Quote(value))
 		case json.Number:
-			w.Out.Write([]byte(value.String()))
+			color.New(color.FgMagenta).Fprint(w.Out, value.String())
 		default:
 			v, err := f.Marshal(value)
 			if err != nil {
@@ -114,6 +99,8 @@ func levelColor(level string) color.Attribute {
 		return color.FgGreen
 	case "warn":
 		return color.FgYellow
+	case "trace":
+		return color.FgBlue
 	case "error", "fatal", "panic":
 		return color.FgRed
 	default:

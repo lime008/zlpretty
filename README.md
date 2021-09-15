@@ -2,9 +2,9 @@
 
 ### Forked from [github.com/UnnoTed/horizontal](https://github.com/UnnoTed/horizontal)
 
-zlpretty is a pretty logging with focus on readability, based on the `zerolog.ConsoleWriter` but with some added features like json pretty printing and log line separator.
+zlpretty is a pretty logging with focus on readability, based on the `zerolog.ConsoleWriter` but with some added features like json pretty printing.
 
-![zlpretty](https://i.imgur.com/RvuuYSj.png)
+![zlpretty](./screenshot.png)
 
 `go get -u github.com/lime008/zlpretty`
 
