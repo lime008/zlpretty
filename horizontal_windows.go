@@ -1,5 +1,0 @@
-package zlpretty
-
-func onResize() {
-
-}
