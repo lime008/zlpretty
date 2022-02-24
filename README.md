@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	log.Logger = log.Output(horizontal.ConsoleWriter{Out: os.Stderr})
+	log.Logger = log.Output(zlpretty.ConsoleWriter{Out: os.Stderr})
 	log.Debug().Msg("hi")
 	log.Debug().Msg("hello")
 }
