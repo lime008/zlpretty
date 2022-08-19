@@ -17,7 +17,16 @@ var testStruct = struct {
 }
 
 func testLog(logger zerolog.Logger) {
-	logger.Error().Str("foo", "bar").Interface("testStruct", testStruct).Msg("hello")
+	logger.Error().
+		Str("foo", "bar").
+		Str("shii", "test").
+		Str("add", "bar").
+		Int("number", 11).
+		Bool("true", false).
+		Bytes("binary", []byte("Test")).
+		RawJSON("value", []byte(`{"some": "json"}`)).
+		Interface("testStruct", testStruct).
+		Msg("hello")
 }
 
 func BenchmarkZlpretty(b *testing.B) {

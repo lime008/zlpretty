@@ -1,32 +1,47 @@
 package zlpretty
 
 import (
-	"bytes"
-	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/TylerBrock/colorjson"
 	"github.com/fatih/color"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 )
 
 var (
-	f         = initFormatter()
-	size      int
-	separator []byte
-	indent    = 4
+	indentSize = 2
+	indentChar = " "
+	indent     = strings.Repeat(indentChar, indentSize)
 )
 
-func initFormatter() *colorjson.Formatter {
-	f := colorjson.NewFormatter()
-	f.Indent = indent
-	f.NumberColor = color.New(color.FgHiMagenta)
-	f.KeyColor = color.New(color.FgCyan)
-	return f
+var (
+	colorDefault = color.New(color.Reset)
+
+	colorTime   = color.New(color.FgHiBlack)
+	colorField  = color.New(color.FgCyan)
+	colorString = color.New(color.FgGreen)
+	colorNumber = color.New(color.FgMagenta)
+
+	colorDebug = color.New(color.FgMagenta, color.Bold)
+	colorInfo  = color.New(color.FgGreen, color.Bold)
+	colorWarn  = color.New(color.FgYellow, color.Bold)
+	colorTrace = color.New(color.FgBlue, color.Bold)
+	colorError = color.New(color.FgRed, color.Bold)
+)
+
+var jsonScheme = &json.ColorScheme{
+	Int:       createFormat(color.FgMagenta),
+	Uint:      createFormat(color.FgMagenta),
+	Float:     createFormat(color.FgMagenta),
+	Bool:      createFormat(color.FgYellow),
+	String:    createFormat(color.FgGreen),
+	Binary:    createFormat(color.FgRed),
+	ObjectKey: createFormat(color.FgCyan),
+	Null:      createFormat(color.FgBlue),
 }
 
 type ConsoleWriter struct {
@@ -36,48 +51,56 @@ type ConsoleWriter struct {
 
 func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 	var event map[string]interface{}
-	d := jsoniter.NewDecoder(bytes.NewReader(p))
-	d.UseNumber()
-	err = d.Decode(&event)
+	err = json.UnmarshalWithOption(p, &event, json.DecodeFieldPriorityFirstWin())
 	if err != nil {
 		return
 	}
+
 	level := "????"
-	lvlColor := color.Reset
+	lvlColor := colorDefault
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {
 		level = strings.ToUpper(l)
 		lvlColor = levelColor(l)
+		delete(event, zerolog.LevelFieldName)
 	}
-	color.New(color.FgHiBlack).Fprint(w.Out, formatTime(event[zerolog.TimestampFieldName]))
-	color.New(lvlColor, color.Bold).Fprintf(w.Out, " [%s] ", level)
+	w.Print(colorTime, formatTime(event[zerolog.TimestampFieldName]))
+	delete(event, zerolog.TimestampFieldName)
+	w.Print(lvlColor, " ["+level+"] ")
 	if message, ok := event[zerolog.MessageFieldName].(string); ok {
 		w.Out.Write([]byte(message))
+		delete(event, zerolog.MessageFieldName)
 	}
-	for field := range event {
-		switch field {
-		case zerolog.LevelFieldName, zerolog.TimestampFieldName, zerolog.MessageFieldName:
-			continue
-		}
 
-		color.New(color.FgCyan).Fprint(w.Out, "\n", strings.Repeat(" ", indent), field, "=")
+	for field := range event {
+		w.Print(colorField, "\n"+indent+field)
+		w.Out.Write([]byte(": "))
 		switch value := event[field].(type) {
 		case string:
-			color.New(color.FgGreen).Fprint(w.Out, strconv.Quote(value))
+			w.Print(colorString, strconv.Quote(value))
 		case json.Number:
-			color.New(color.FgMagenta).Fprint(w.Out, value.String())
+			w.Print(colorNumber, value.String())
 		default:
-			v, err := f.Marshal(value)
+			v, err := json.MarshalIndentWithOption(value, indent, indent, w.jsonOptions)
 			if err != nil {
 				return 0, err
 			}
-
-			v = bytes.ReplaceAll(v, []byte("\n"), []byte("\n"+strings.Repeat(" ", indent)))
 
 			w.Out.Write(v)
 		}
 	}
 	w.Out.Write([]byte("\n"))
 	return
+}
+
+func (w ConsoleWriter) jsonOptions(opts *json.EncodeOption) {
+	json.DisableHTMLEscape()(opts)
+	json.DisableNormalizeUTF8()(opts)
+
+	if w.NoColor {
+		return
+	}
+
+	json.Colorize(jsonScheme)(opts)
 }
 
 func formatTime(t interface{}) string {
@@ -91,19 +114,34 @@ func formatTime(t interface{}) string {
 	return "<nil>"
 }
 
-func levelColor(level string) color.Attribute {
+func (cw ConsoleWriter) Print(c *color.Color, s string) {
+	if cw.NoColor {
+		cw.Out.Write([]byte(s))
+		return
+	}
+	c.Fprint(cw.Out, s)
+}
+
+func levelColor(level string) *color.Color {
 	switch level {
 	case "debug":
-		return color.FgMagenta
+		return colorDebug
 	case "info":
-		return color.FgGreen
+		return colorInfo
 	case "warn":
-		return color.FgYellow
+		return colorWarn
 	case "trace":
-		return color.FgBlue
+		return colorTrace
 	case "error", "fatal", "panic":
-		return color.FgRed
+		return colorError
 	default:
-		return color.Reset
+		return colorDefault
+	}
+}
+
+func createFormat(c color.Attribute) json.ColorFormat {
+	return json.ColorFormat{
+		Header: fmt.Sprintf("%s[%dm", "\x1b", c),
+		Footer: fmt.Sprintf("%s[%dm", "\x1b", 0),
 	}
 }

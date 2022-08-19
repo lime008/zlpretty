@@ -25,7 +25,12 @@ func ExampleLogger() {
 	}
 
 	log.Info().Str("foo", "bar").Msg("hello")
-	log.Trace().Caller().Bool("boolean", false).Str("foo", "bar").Int("number", 14).Msg("hello")
+	log.Trace().Caller().
+		Int("number", 14).
+		Bytes("binary", []byte("Test")).
+		Bool("boolean", false).
+		Str("foo", "bar").
+		RawJSON("value", []byte(`{"some": "json"}`)).Msg("hello")
 	log.Debug().Msg("hi")
 	log.Warn().Msg("WARNING")
 	log.Info().Interface("testStruct", testStructValue).Msg("hello")
