@@ -1,4 +1,4 @@
-# zlpretty
+## ❗Archiving this project for [github.com/lime008/liitu](https://github.com/lime008/liitu) that also provides a slog handler.
 
 ### Forked from [github.com/UnnoTed/horizontal](https://github.com/UnnoTed/horizontal)
 
